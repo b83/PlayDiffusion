@@ -675,7 +675,7 @@ class PlayDiffusion():
         print(f"Input: {input}")
 
         # normalize the input text
-        input_text = unidecode(input.input_text)
+        input_text = unidecodeinput.input_text)
         output_text = unidecode(input.output_text)
         print(f"Inpainter input text: {input_text}")
         print(f"Inpainter output text: {output_text}")
@@ -781,11 +781,11 @@ class PlayDiffusion():
 
         # normalize the input text
         output_text = unidecode(input.output_text)
-        print(f"TTS text: {output_text}")
+      #  print(f"TTS text: {output_text}")
         split_texts = self.split_text_as_necessary(output_text)
-        print(f"Split texts:")
-        for text in split_texts:
-            print(f"    {text}")
+       # print(f"Split texts:")
+       # for text in split_texts:
+       #     print(f"    {text}")
         self.timer("Normalize and split text")
 
         with torch.inference_mode():
@@ -829,7 +829,7 @@ class PlayDiffusion():
 
         self.timer.reset()
 
-        print(f"Input: {input}")
+        # print(f"Input: {input}")
         
         # get target voice's vocoder_emb
         vocoder_emb = get_vocoder_embedding(input.target_voice, self.mm).to(self.device)
