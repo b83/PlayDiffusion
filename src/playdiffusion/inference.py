@@ -675,7 +675,7 @@ class PlayDiffusion():
         print(f"Input: {input}")
 
         # normalize the input text
-        input_text = unidecodeinput.input_text)
+        input_text = unidecode(input.input_text)
         output_text = unidecode(input.output_text)
         print(f"Inpainter input text: {input_text}")
         print(f"Inpainter output text: {output_text}")
