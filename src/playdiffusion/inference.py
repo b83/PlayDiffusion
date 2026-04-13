@@ -777,15 +777,9 @@ class PlayDiffusion():
 
         self.timer.reset()
 
-        print(f"Input: {input}")
-
         # normalize the input text
         output_text = unidecode(input.output_text)
-        print(f"TTS text: {output_text}")
         split_texts = self.split_text_as_necessary(output_text)
-        print(f"Split texts:")
-        for text in split_texts:
-            print(f"    {text}")
         self.timer("Normalize and split text")
 
         with torch.inference_mode():
@@ -805,7 +799,8 @@ class PlayDiffusion():
                 self.timer("Estimate frames")
 
                 # generate the TTS result
-                print(f"Generating TTS with {target_len} frames")
+                word_count = len(text.split())
+                print(f"Generating TTS for {word_count} word(s)")
                 tts_result_tokens.append(self.mm.inpainter.generate(
                     text_tokens=text_tokens,
                     target_len=target_len,

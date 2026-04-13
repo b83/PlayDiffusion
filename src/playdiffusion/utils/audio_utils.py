@@ -95,11 +95,9 @@ class Timer:
 
     def __call__(self, description: str):
         if description in self.times:
-            print(f"Already timed {description}")
             return
         new_time = time.time()
         self.times[description] = 1000 * (new_time - self.previous_time)
-        print(f"{description} time: {self.times[description]:.1f} ms")
         self.previous_time = new_time
 
     def get_times(self):

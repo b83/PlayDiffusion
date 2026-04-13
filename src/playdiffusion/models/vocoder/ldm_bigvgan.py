@@ -808,7 +808,6 @@ class BigVGAN(torch.nn.Module):
         if voice_emb.ndim == 3:
             voice_emb = voice_emb.squeeze(1)
         res = self.forward(ar_h, voice_emb)
-        print(f"Vocoder time: {(time.perf_counter() - t_start) * 1000:.1f} ms")
         return res
 
     @property
