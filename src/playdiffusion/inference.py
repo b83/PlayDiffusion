@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from playdiffusion.models.model_manager import PlayDiffusionModelManager
-from playdiffusion.pydantic_models.models import InpaintInput, TTSInput, RVCInput
+from playdiffusion.pydantic_models.models import InpaintInput, TTSInput, TTSStreamInput, RVCInput
 from playdiffusion.utils.audio_utils import Timer, get_vocoder_embedding, load_audio
 from playdiffusion.utils.save_audio import make_16bit_pcm
 
@@ -817,6 +817,65 @@ class PlayDiffusion():
             self.timer("Vocoder")
 
         return (self.mm.vocoder.output_frequency, make_16bit_pcm(audio_g).squeeze())
+
+    def tts_stream(self, input: TTSStreamInput):
+        """
+        Streaming variant of tts(): consumes input.output_texts lazily and yields
+        (sample_rate, pcm_chunk) for each segment as soon as it is generated and
+        vocoded. The caller can begin playback of the first segment while later
+        segments are still being produced.
+
+        Note: each segment is generated and vocoded independently, so prosody
+        does not carry across segment boundaries. Voice identity is anchored to a
+        single vocoder embedding computed once at the start, so timbre is stable
+        across segments.
+        """
+        import syllables
+        import torch
+        from unidecode import unidecode
+
+        self.timer.reset()
+
+        with torch.inference_mode():
+            vocoder_emb = get_vocoder_embedding(input.voice, self.mm).to(self.device)
+            self.timer("Get vocoder embedding")
+
+            for raw_text in input.output_texts:
+                if raw_text is None:
+                    continue
+                normalized = unidecode(raw_text).strip()
+                if not normalized:
+                    continue
+
+                # Apply the same length safety net as tts(): a very long sentence
+                # gets split further so we never exceed max_tts_text_input_length.
+                for text in self.split_text_as_necessary(normalized):
+                    text_tokens = self.mm.tokenizer.encode_normalized_to_tensor(text)
+                    self.timer("Tokenize")
+
+                    ratio = input.audio_token_syllable_ratio or self.default_audio_token_syllable_ratio
+                    n_syllables = syllables.estimate(text)
+                    target_len = int(n_syllables * ratio)
+                    self.timer("Estimate frames")
+
+                    word_count = len(text.split())
+                    print(f"Generating TTS for {word_count} word(s) [stream]")
+                    tokens = self.mm.inpainter.generate(
+                        text_tokens=text_tokens,
+                        target_len=target_len,
+                        n_timesteps=input.num_steps,
+                        init_temp=input.init_temp,
+                        init_diversity=input.init_diversity,
+                        guidance=input.guidance,
+                        rescale_cfg=input.rescale,
+                        topk=input.topk,
+                    )
+                    self.timer("TTS generation")
+
+                    audio_g = self.mm.vocoder(tokens, vocoder_emb)
+                    self.timer("Vocoder")
+
+                    yield (self.mm.vocoder.output_frequency, make_16bit_pcm(audio_g).squeeze())
 
     def rvc(self, input: RVCInput):
         import torch
