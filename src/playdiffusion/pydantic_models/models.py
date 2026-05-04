@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -73,6 +73,62 @@ class InpaintInput(BaseInput):
 class TTSInput(BaseInput):
     voice: str = Field(
         description="URL to the voice resource to use for TTS",
+    )
+
+class TTSStreamInput(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+
+    output_texts: Iterable[str] = Field(
+        description="Iterable of text segments (e.g. sentences) to synthesize. May be a list \
+            or a live generator (e.g. yielding sentences from a ChatGPT stream); items are \
+            consumed lazily, so the next segment is only pulled once the previous one has \
+            finished generating and vocoding.",
+    )
+    voice: str = Field(
+        description="URL to the voice resource to use for TTS",
+    )
+    num_steps: int = Field(
+        default=30,
+        ge=1,
+        le=100,
+        description="Number of steps to take in the inpainting process",
+    )
+    init_temp: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="Initial temperature for the inpainting process",
+    )
+    init_diversity: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="Initial diversity for the inpainting process",
+    )
+    guidance: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Guidance for the inpainting process",
+    )
+    rescale: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description="Rescale for the inpainting process",
+    )
+    topk: int = Field(
+        default=25,
+        ge=1,
+        le=100,
+        description="Top-k for the inpainting process",
+    )
+    audio_token_syllable_ratio: Optional[float] = Field(
+        default=None,
+        ge=5.0,
+        le=25.0,
+        description="Ratio of audio tokens to syllables in the input text; if not provided, \
+            it will be calculated automatically",
     )
 
 class RVCInput(BaseModel):
